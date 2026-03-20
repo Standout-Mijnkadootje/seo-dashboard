@@ -160,6 +160,7 @@
     <button class="tab" onclick="switchTab('dalingen')">Dalingen</button>
     <button class="tab" onclick="switchTab('ai')">AI Aanbevelingen</button>
     <button class="tab" onclick="switchTab('blog')">Blog & Longtail</button>
+    <button class="tab" onclick="switchTab('audit')">SEO Audit</button>
   </div>
 
   <main>
@@ -243,6 +244,98 @@
         </div>
         <div class="ai-body" id="ai-body">
           <div style="color: var(--muted); font-size: 13px; padding: 8px 0;">Klik op "Analyseer nu" om een gepersonaliseerde SEO-analyse te genereren op basis van je huidige Search Console data.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEO AUDIT TAB -->
+    <div class="tab-content" id="tab-audit">
+      <div class="section-title">Screaming Frog CSV upload — enkel fouten die jij zelf kan oplossen</div>
+      <div class="ai-panel" style="margin-bottom:28px">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title">
+            <div class="ai-dot"></div>
+            Upload je Screaming Frog export
+          </div>
+        </div>
+        <div class="ai-body">
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Exporteer via <strong style="color:var(--text)">Bulk Export → Queued URLs</strong> en upload het CSV-bestand hier.</p>
+          <div id="drop-zone" style="border:1.5px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border .2s" ondragover="event.preventDefault();this.style.borderColor='var(--accent)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleDrop(event)">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Sleep CSV hier naartoe of klik om te uploaden</div>
+            <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+            <button class="btn-ai" onclick="document.getElementById('csv-input').click()">📂 CSV kiezen</button>
+          </div>
+          <div id="audit-stats" style="display:none;margin-top:20px">
+            <div class="stats-grid" id="audit-stats-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="audit-results" style="display:none">
+        <!-- Missing titles -->
+        <div class="section-title">Ontbrekende title tags</div>
+        <div class="table-card" style="margin-bottom:28px">
+          <div class="table-header">
+            <div><div class="table-title">Pagina's zonder title tag</div><div class="table-sub">Voeg een unieke title toe via je CMS</div></div>
+            <span id="missing-titles-count" class="badge badge-red"></span>
+          </div>
+          <table><thead><tr><th>PAGINA</th><th>TYPE</th></tr></thead>
+          <tbody id="missing-titles-body"></tbody></table>
+        </div>
+
+        <!-- Missing meta descriptions -->
+        <div class="section-title">Ontbrekende meta descriptions</div>
+        <div class="table-card" style="margin-bottom:28px">
+          <div class="table-header">
+            <div><div class="table-title">Pagina's zonder meta description</div><div class="table-sub">Schrijf een beschrijving van 140-155 tekens per pagina</div></div>
+            <span id="missing-meta-count" class="badge badge-red"></span>
+          </div>
+          <table><thead><tr><th>PAGINA</th><th>TITLE</th></tr></thead>
+          <tbody id="missing-meta-body"></tbody></table>
+        </div>
+
+        <!-- Missing H1s -->
+        <div class="section-title">Ontbrekende H1 tags</div>
+        <div class="table-card" style="margin-bottom:28px">
+          <div class="table-header">
+            <div><div class="table-title">Pagina's zonder H1</div><div class="table-sub">Elke pagina heeft exact één H1 nodig</div></div>
+            <span id="missing-h1-count" class="badge badge-red"></span>
+          </div>
+          <table><thead><tr><th>PAGINA</th><th>TITLE</th></tr></thead>
+          <tbody id="missing-h1-body"></tbody></table>
+        </div>
+
+        <!-- Duplicate titles -->
+        <div class="section-title">Dubbele title tags</div>
+        <div class="table-card" style="margin-bottom:28px">
+          <div class="table-header">
+            <div><div class="table-title">Pagina's met dezelfde title</div><div class="table-sub">Elke pagina moet een unieke title hebben</div></div>
+            <span id="dup-titles-count" class="badge badge-amber"></span>
+          </div>
+          <table><thead><tr><th>TITLE</th><th>PAGINA'S</th></tr></thead>
+          <tbody id="dup-titles-body"></tbody></table>
+        </div>
+
+        <!-- Title too long/short -->
+        <div class="section-title">Title tags met verkeerde lengte</div>
+        <div class="table-card" style="margin-bottom:28px">
+          <div class="table-header">
+            <div><div class="table-title">Te lang (&gt;60 tekens) of te kort (&lt;20 tekens)</div><div class="table-sub">Ideale lengte: 30-60 tekens</div></div>
+            <span id="bad-title-len-count" class="badge badge-amber"></span>
+          </div>
+          <table><thead><tr><th>PAGINA</th><th>TITLE</th><th>LENGTE</th><th>PROBLEEM</th></tr></thead>
+          <tbody id="bad-title-len-body"></tbody></table>
+        </div>
+
+        <!-- AI audit advice -->
+        <div class="ai-panel">
+          <div class="ai-panel-header">
+            <div class="ai-panel-title"><div class="ai-dot"></div>AI prioriteitenanalyse van de audit</div>
+            <button class="btn-ai" id="audit-ai-btn" onclick="generateAuditAdvice()">✦ Analyseer prioriteiten</button>
+          </div>
+          <div class="ai-body" id="audit-ai-body">
+            <div style="color:var(--muted);font-size:13px">Klik op "Analyseer prioriteiten" voor een geprioriteerde actielijst op basis van de gevonden fouten.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -433,7 +526,7 @@ async function generateAIAdvice() {
   if(!summary){body.innerHTML='<div style="color:var(--muted);font-size:13px">Laad eerst de data via het Overzicht tabblad.</div>';btn.disabled=false;btn.textContent='✦ Analyseer nu';return;}
 
   try {
-    const resp=await fetch('https://seo-proxy.green-thunder-8776.workers.dev',{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -462,14 +555,14 @@ async function generateBlogAdvice() {
   if(!summary){body.innerHTML='<div style="color:var(--muted);font-size:13px">Laad eerst de data.</div>';btn.disabled=false;btn.innerHTML='✦ Genereer ideeën';return;}
 
   try {
-    const resp=await fetch('https://seo-proxy.green-thunder-8776.workers.dev',{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1500,
-        system:`Je bent een content strateeg voor Belgische e-commerce. Je specialiseert in SEO-content voor gepersonaliseerde cadeaus. Geef concrete blogtitel-suggesties, longtail zoekwoorden voor AI-zoekmachines (ChatGPT Search, Perplexity, Google AI Overviews), en seizoensgebonden kansen. Schrijf in het Nederlands. Gebruik HTML met <h3>, <ul>, <li>, <strong> tags.`,
-        messages:[{role:'user',content:`Op basis van deze Search Console data van mijnkadootje.be:\n\n${summary}\n\nGeef:\n1. 5 concrete blogartikeltitels met bijhorende longtail zoekwoorden (focus op Belgisch publiek)\n2. AI-zoekaanbevelingen: hoe scoort mijnkadootje.be beter in ChatGPT/Perplexity antwoorden?\n3. Seizoensgebonden kansen de komende 60 dagen\n4. 10 longtail zoekwoorden die momenteel niet gescoord worden maar wel relevant zijn`}]
+        system:`Je bent een content strateeg voor Belgische e-commerce. Je specialiseert in SEO-content voor gepersonaliseerde cadeaus. Geef concrete blogtitel-suggesties, longtail zoekwoorden voor AI-zoekmachines (ChatGPT Search, Perplexity, Google AI Overviews), en seizoensgebonden kansen. Schrijf in het Nederlands. Gebruik HTML met <h3>, <ul>, <li>, <strong> tags. Gebruik altijd het correcte huidige jaar in titels en aanbevelingen.`,
+        messages:[{role:'user',content:`Vandaag is het ${new Date().toLocaleDateString('nl-BE', {day:'numeric',month:'long',year:'numeric'})}.\n\nOp basis van deze Search Console data van mijnkadootje.be:\n\n${summary}\n\nGeef:\n1. 5 concrete blogartikeltitels met bijhorende longtail zoekwoorden (focus op Belgisch publiek, gebruik het correcte jaartal ${new Date().getFullYear()})\n2. AI-zoekaanbevelingen: hoe scoort mijnkadootje.be beter in ChatGPT/Perplexity antwoorden?\n3. Seizoensgebonden kansen de komende 60 dagen (vertrekkend van ${new Date().toLocaleDateString('nl-BE', {month:'long',year:'numeric'})})\n4. 10 longtail zoekwoorden die momenteel niet gescoord worden maar wel relevant zijn`}]
       })
     });
     const data=await resp.json();
@@ -481,9 +574,159 @@ async function generateBlogAdvice() {
   btn.disabled=false; btn.innerHTML='✦ Hergeneer';
 }
 
+// ── SEO Audit ──────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').style.borderColor='var(--border)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => parseAndRenderAudit(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n');
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = []; let cur = ''; let inQ = false;
+    for (const c of line) { if (c==='"') { inQ=!inQ; } else if (c===','&&!inQ) { vals.push(cur.trim()); cur=''; } else { cur+=c; } }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim());
+    return obj;
+  });
+}
+
+let auditData = {};
+
+function parseAndRenderAudit(csvText) {
+  const rows = parseCSV(csvText);
+  // Only HTML pages, no assets
+  const htmlPages = rows.filter(r => {
+    const ct = (r['content type']||r['content-type']||'').toLowerCase();
+    const addr = (r['address']||r['url']||'').toLowerCase();
+    return ct.includes('html') || (!ct && addr.includes('mijnkadootje.be') && !addr.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|ttf|pdf)(\?|$)/i));
+  });
+
+  const getField = (r, ...keys) => { for (const k of keys) { if (r[k]!==undefined) return r[k]; } return ''; };
+
+  // Missing titles
+  const missingTitles = htmlPages.filter(r => !getField(r,'title 1','title tag','title'));
+  // Missing meta desc
+  const missingMeta = htmlPages.filter(r => !getField(r,'meta description 1','meta description','description'));
+  // Missing H1
+  const missingH1 = htmlPages.filter(r => !getField(r,'h1-1','h1 1','h1'));
+  // Duplicate titles
+  const titleMap = {};
+  htmlPages.forEach(r => { const t=getField(r,'title 1','title tag','title'); if(t) { titleMap[t]=titleMap[t]||[]; titleMap[t].push(getField(r,'address','url')); } });
+  const dupTitles = Object.entries(titleMap).filter(([,urls])=>urls.length>1);
+  // Bad title length
+  const badTitleLen = htmlPages.filter(r => { const t=getField(r,'title 1','title tag','title'); return t && (t.length>60||t.length<20); });
+
+  auditData = { htmlPages, missingTitles, missingMeta, missingH1, dupTitles, badTitleLen };
+
+  // Stats
+  document.getElementById('audit-stats').style.display='block';
+  document.getElementById('audit-stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">PAGINA'S GECRAWLD</div><div class="stat-value">${htmlPages.length}</div></div>
+    <div class="stat-card"><div class="stat-label">GEEN TITLE</div><div class="stat-value" style="color:var(--danger)">${missingTitles.length}</div></div>
+    <div class="stat-card"><div class="stat-label">GEEN META DESC</div><div class="stat-value" style="color:var(--danger)">${missingMeta.length}</div></div>
+    <div class="stat-card"><div class="stat-label">GEEN H1</div><div class="stat-value" style="color:var(--danger)">${missingH1.length}</div></div>
+    <div class="stat-card"><div class="stat-label">DUBBELE TITLES</div><div class="stat-value" style="color:var(--accent2)">${dupTitles.length}</div></div>
+    <div class="stat-card"><div class="stat-label">TITLE TE LANG/KORT</div><div class="stat-value" style="color:var(--accent2)">${badTitleLen.length}</div></div>
+  `;
+
+  const slug = u => (u||'').replace('https://mijnkadootje.be','').replace('http://mijnkadootje.be','')||'/';
+
+  // Missing titles table
+  document.getElementById('missing-titles-count').textContent = missingTitles.length + ' pagina\'s';
+  document.getElementById('missing-titles-body').innerHTML = missingTitles.length
+    ? missingTitles.slice(0,30).map(r=>`<tr><td><span class="url-cell">${slug(getField(r,'address','url'))}</span></td><td><span class="badge badge-red">Geen title</span></td></tr>`).join('')
+    : '<tr><td colspan="2" class="empty">Geen problemen gevonden ✓</td></tr>';
+
+  // Missing meta table
+  document.getElementById('missing-meta-count').textContent = missingMeta.length + ' pagina\'s';
+  document.getElementById('missing-meta-body').innerHTML = missingMeta.length
+    ? missingMeta.slice(0,30).map(r=>`<tr><td><span class="url-cell">${slug(getField(r,'address','url'))}</span></td><td style="font-size:12px;color:var(--muted)">${(getField(r,'title 1','title tag','title')||'—').substring(0,50)}</td></tr>`).join('')
+    : '<tr><td colspan="2" class="empty">Geen problemen gevonden ✓</td></tr>';
+
+  // Missing H1 table
+  document.getElementById('missing-h1-count').textContent = missingH1.length + ' pagina\'s';
+  document.getElementById('missing-h1-body').innerHTML = missingH1.length
+    ? missingH1.slice(0,30).map(r=>`<tr><td><span class="url-cell">${slug(getField(r,'address','url'))}</span></td><td style="font-size:12px;color:var(--muted)">${(getField(r,'title 1','title tag','title')||'—').substring(0,50)}</td></tr>`).join('')
+    : '<tr><td colspan="2" class="empty">Geen problemen gevonden ✓</td></tr>';
+
+  // Duplicate titles table
+  document.getElementById('dup-titles-count').textContent = dupTitles.length + ' titels';
+  document.getElementById('dup-titles-body').innerHTML = dupTitles.length
+    ? dupTitles.slice(0,20).map(([t,urls])=>`<tr><td style="font-size:12px">${t.substring(0,50)}</td><td>${urls.map(u=>`<div><span class="url-cell">${slug(u)}</span></div>`).join('')}</td></tr>`).join('')
+    : '<tr><td colspan="2" class="empty">Geen dubbele titles ✓</td></tr>';
+
+  // Bad title length table
+  document.getElementById('bad-title-len-count').textContent = badTitleLen.length + ' pagina\'s';
+  document.getElementById('bad-title-len-body').innerHTML = badTitleLen.length
+    ? badTitleLen.slice(0,30).map(r=>{ const t=getField(r,'title 1','title tag','title'); const prob=t.length>60?'Te lang':'Te kort'; const cls=t.length>60?'badge-red':'badge-amber'; return `<tr><td><span class="url-cell">${slug(getField(r,'address','url'))}</span></td><td style="font-size:12px">${t.substring(0,55)}${t.length>55?'…':''}</td><td style="font-family:var(--mono);font-size:12px">${t.length}</td><td><span class="badge ${cls}">${prob}</span></td></tr>`; }).join('')
+    : '<tr><td colspan="4" class="empty">Alle titles hebben een goede lengte ✓</td></tr>';
+
+  document.getElementById('audit-results').style.display='block';
+}
+
+async function generateAuditAdvice() {
+  const btn=document.getElementById('audit-ai-btn');
+  const body=document.getElementById('audit-ai-body');
+  if(!auditData.htmlPages){body.innerHTML='<div style="color:var(--muted);font-size:13px">Upload eerst een CSV.</div>';return;}
+  btn.disabled=true; btn.textContent='Analyseren...';
+  body.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Prioriteiten bepalen...</div>';
+
+  const slug = u => (u||'').replace('https://mijnkadootje.be','').replace('http://mijnkadootje.be','')||'/';
+  const getField = (r,...keys) => { for(const k of keys){if(r[k]!==undefined)return r[k];}return ''; };
+  const summary = `
+Mijnkadootje.be SEO Audit — ${new Date().toLocaleDateString('nl-BE')}
+Totaal HTML-pagina's: ${auditData.htmlPages.length}
+
+ONTBREKENDE TITLES (${auditData.missingTitles.length}):
+${auditData.missingTitles.slice(0,10).map(r=>slug(getField(r,'address','url'))).join('\n')}
+
+ONTBREKENDE META DESCRIPTIONS (${auditData.missingMeta.length}):
+${auditData.missingMeta.slice(0,10).map(r=>slug(getField(r,'address','url'))).join('\n')}
+
+ONTBREKENDE H1 (${auditData.missingH1.length}):
+${auditData.missingH1.slice(0,10).map(r=>slug(getField(r,'address','url'))).join('\n')}
+
+DUBBELE TITLES (${auditData.dupTitles.length}):
+${auditData.dupTitles.slice(0,5).map(([t,urls])=>`"${t}" → ${urls.length} pagina's`).join('\n')}
+
+TITLE TE LANG/KORT (${auditData.badTitleLen.length}):
+${auditData.badTitleLen.slice(0,5).map(r=>{ const t=getField(r,'title 1','title tag','title'); return `"${t.substring(0,40)}" (${t.length} tekens)`; }).join('\n')}
+  `.trim();
+
+  try {
+    const resp=await fetch('https://seo-proxy.green-thunder-8776.workers.dev',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1500,
+        system:`Je bent een SEO-consultant voor mijnkadootje.be. Analyseer de gevonden SEO-fouten en geef een geprioriteerde actielijst van wat de eigenaar ZELF kan doen (zonder webshopbouwer). Focus op: title tags schrijven, meta descriptions schrijven, H1 teksten toevoegen. Geef concrete voorbeeldteksten. Gebruik HTML met <h3>, <ul>, <li>, <strong> tags.`,
+        messages:[{role:'user',content:`Analyseer deze SEO-auditresultaten en geef:\n1. Top 5 prioritaire fixes deze week (met concrete voorbeeldteksten)\n2. Welke pagina's het meest dringend zijn\n3. Sjablonen voor ontbrekende title tags en meta descriptions\n\nDATA:\n${summary}`}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content&&data.content[0]?data.content[0].text:'Geen antwoord.';
+    body.innerHTML=`<div class="ai-content">${text}</div>`;
+  } catch(e) {
+    body.innerHTML=`<div style="color:var(--danger);font-size:13px">Fout: ${e.message}</div>`;
+  }
+  btn.disabled=false; btn.innerHTML='✦ Heranalyseer';
+}
+
 // ── UI Helpers ─────────────────────────────────────────
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['overview','quickwins','dalingen','ai','blog'][i]===name));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['overview','quickwins','dalingen','ai','blog','audit'][i]===name));
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
 }
