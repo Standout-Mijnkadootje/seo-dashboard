@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Dashboard — Mijnkadootje</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --bg2: #16181c;
+    --bg3: #1e2026;
+    --border: #2a2d35;
+    --text: #e8eaf0;
+    --muted: #6b7080;
+    --accent: #4ade80;
+    --accent2: #f59e0b;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+  }
+  .login-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    padding: 48px; max-width: 480px; width: 90%;
+  }
+  .login-card h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .login-card p { color: var(--muted); font-size: 13px; margin-bottom: 32px; line-height: 1.6; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono); letter-spacing: .04em; }
+  .field input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text); font-family: var(--mono); font-size: 12px;
+    outline: none; transition: border .2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .btn-primary {
+    width: 100%; background: var(--accent); color: #0a1a0f; border: none; border-radius: 8px;
+    padding: 12px; font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 8px; transition: opacity .2s;
+  }
+  .btn-primary:hover { opacity: .85; }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+  .notice { background: #1a1e2a; border: 1px solid #2a3050; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #8090c0; margin-bottom: 24px; line-height: 1.6; }
+  .notice strong { color: #a0b0e0; }
+
+  /* DASHBOARD */
+  #dashboard { display: none; }
+  header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .site-badge { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .btn-sm { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; font-family: var(--font); transition: all .2s; }
+  .btn-sm:hover { color: var(--text); border-color: #4a4d55; }
+
+  main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+  .section-title { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 16px; font-family: var(--mono); }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 8px; font-family: var(--mono); }
+  .stat-value { font-size: 28px; font-weight: 300; line-height: 1; margin-bottom: 6px; }
+  .stat-delta { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .delta-up { color: var(--accent); }
+  .delta-down { color: var(--danger); }
+  .delta-neutral { color: var(--muted); }
+
+  /* TABLES */
+  .table-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .table-title { font-size: 13px; font-weight: 500; }
+  .table-sub { font-size: 11px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 20px; font-size: 11px; color: var(--muted); font-weight: 400; border-bottom: 1px solid var(--border); font-family: var(--mono); background: var(--bg3); }
+  td { padding: 12px 20px; border-bottom: 1px solid #1a1c22; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1a1c22; }
+  .url-cell { font-family: var(--mono); font-size: 11px; color: var(--info); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: var(--mono); }
+  .badge-green { background: #0d2b1a; color: var(--accent); }
+  .badge-red { background: #2b0d0d; color: var(--danger); }
+  .badge-amber { background: #2b1e0d; color: var(--accent2); }
+  .badge-blue { background: #0d1a2b; color: var(--info); }
+
+  .pos-bar { display: flex; align-items: center; gap: 8px; }
+  .pos-num { font-family: var(--mono); font-size: 12px; min-width: 24px; }
+  .pos-track { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; max-width: 80px; }
+  .pos-fill { height: 100%; border-radius: 2px; background: var(--accent2); }
+
+  /* TWO COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+  @media(max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* LOADING */
+  #loading { display: none; min-height: 100vh; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { color: var(--muted); font-size: 13px; }
+
+  /* ERROR */
+  .error-bar { background: #2b0d0d; border: 1px solid #5a1a1a; border-radius: 8px; padding: 12px 16px; color: var(--danger); font-size: 13px; margin-bottom: 24px; display: none; }
+
+  /* EMPTY STATE */
+  .empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; }
+  .tab { padding: 7px 16px; border-radius: 7px; font-size: 13px; cursor: pointer; color: var(--muted); transition: all .2s; border: none; background: none; font-family: var(--font); }
+  .tab.active { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+
+  .refresh-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; color: var(--muted); font-size: 12px; cursor: pointer; font-family: var(--font); transition: all .2s; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { color: var(--text); border-color: var(--accent); }
+  .last-updated { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>SEO Dashboard</h1>
+    <p>Voer je Google OAuth-gegevens in om verbinding te maken met Search Console. Deze gegevens worden enkel lokaal in je browser gebruikt.</p>
+    <div class="notice">
+      <strong>Privacy:</strong> Je Client ID en Secret verlaten je browser nooit. Alle API-calls gebeuren rechtstreeks vanuit jouw browser naar Google.
+    </div>
+    <div id="login-error" class="error-bar"></div>
+    <div class="field">
+      <label>CLIENT ID</label>
+      <input type="text" id="client-id" placeholder="xxxxx.apps.googleusercontent.com" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>CLIENT SECRET</label>
+      <input type="password" id="client-secret" placeholder="GOCSPX-..." autocomplete="off">
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="startOAuth()">Verbinden met Google Search Console</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-text">Data ophalen uit Search Console...</p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      SEO Dashboard
+    </div>
+    <div class="header-right">
+      <span class="site-badge">mijnkadootje.be</span>
+      <span class="last-updated" id="last-updated"></span>
+      <button class="refresh-btn" onclick="loadAllData()">↻ Vernieuwen</button>
+      <button class="btn-sm" onclick="logout()">Uitloggen</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="dash-error" class="error-bar"></div>
+
+    <!-- STATS -->
+    <div class="section-title">Laatste 28 dagen vs vorige periode</div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">KLIKKEN</div><div class="stat-value" id="s-clicks">—</div><div class="stat-delta" id="d-clicks">laden...</div></div>
+      <div class="stat-card"><div class="stat-label">VERTONINGEN</div><div class="stat-value" id="s-impr">—</div><div class="stat-delta" id="d-impr">laden...</div></div>
+      <div class="stat-card"><div class="stat-label">GEM. CTR</div><div class="stat-value" id="s-ctr">—</div><div class="stat-delta" id="d-ctr">laden...</div></div>
+      <div class="stat-card"><div class="stat-label">GEM. POSITIE</div><div class="stat-value" id="s-pos">—</div><div class="stat-delta" id="d-pos">laden...</div></div>
+    </div>
+
+    <!-- QUICK WINS -->
+    <div class="section-title">Quick wins — zoekwoorden op positie 4–15</div>
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Laaghangend fruit</div>
+          <div class="table-sub">Pagina's die net buiten de top 3 staan — kleine optimalisaties kunnen grote sprongen geven</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>ZOEKWOORD</th><th>POSITIE</th><th>KLIKKEN</th><th>VERTONINGEN</th><th>CTR</th><th>POTENTIEEL</th></tr></thead>
+        <tbody id="quickwins-body"><tr><td colspan="6" class="empty">Laden...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="two-col">
+      <!-- DALINGEN PAGINAS -->
+      <div>
+        <div class="section-title">Pagina's die zakken in positie</div>
+        <div class="table-card">
+          <div class="table-header">
+            <div>
+              <div class="table-title">Positieverlies</div>
+              <div class="table-sub">Vergeleken met 28 dagen geleden</div>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>PAGINA</th><th>NU</th><th>VERSCHIL</th></tr></thead>
+            <tbody id="declining-body"><tr><td colspan="3" class="empty">Laden...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BESTE PAGINAS -->
+      <div>
+        <div class="section-title">Beste pagina's — deze week vs vorige week</div>
+        <div class="table-card">
+          <div class="table-header">
+            <div>
+              <div class="table-title">Top performers</div>
+              <div class="table-sub">Op basis van klikken</div>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>PAGINA</th><th>KLIKKEN</th><th>TREND</th></tr></thead>
+            <tbody id="toppages-body"><tr><td colspan="3" class="empty">Laden...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DALENDE ZOEKWOORDEN -->
+    <div class="section-title">Zoekwoorden die dalen in klikken</div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Klikdalingen per zoekwoord</div>
+        <div class="table-sub">Laatste 28 dagen vs vorige 28 dagen</div>
+      </div>
+      <table>
+        <thead><tr><th>ZOEKWOORD</th><th>KLIKKEN NU</th><th>KLIKKEN VORIG</th><th>VERSCHIL</th><th>POSITIE</th></tr></thead>
+        <tbody id="declining-kw-body"><tr><td colspan="5" class="empty">Laden...</td></tr></tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const SITE = 'sc-domain:mijnkadootje.be';
+let accessToken = null;
+let clientId = '';
+let clientSecret = '';
+
+// OAuth PKCE flow
+function generateState() {
+  return Math.random().toString(36).substring(2);
+}
+
+function startOAuth() {
+  clientId = document.getElementById('client-id').value.trim();
+  clientSecret = document.getElementById('client-secret').value.trim();
+  if (!clientId || !clientSecret) {
+    showLoginError('Vul beide velden in.');
+    return;
+  }
+  localStorage.setItem('gsc_client_id', clientId);
+  localStorage.setItem('gsc_client_secret', clientSecret);
+
+  const state = generateState();
+  localStorage.setItem('oauth_state', state);
+
+  const redirectUri = window.location.href.split('?')[0].split('#')[0];
+  localStorage.setItem('oauth_redirect', redirectUri);
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'https://www.googleapis.com/auth/webmasters.readonly',
+    access_type: 'offline',
+    state: state,
+    prompt: 'consent'
+  });
+
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+}
+
+async function exchangeCode(code) {
+  const redirectUri = localStorage.getItem('oauth_redirect') || window.location.href.split('?')[0].split('#')[0];
+  const cId = localStorage.getItem('gsc_client_id');
+  const cSecret = localStorage.getItem('gsc_client_secret');
+
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: cId,
+      client_secret: cSecret,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code'
+    })
+  });
+  const data = await resp.json();
+  if (data.access_token) {
+    accessToken = data.access_token;
+    localStorage.setItem('gsc_access_token', accessToken);
+    if (data.refresh_token) localStorage.setItem('gsc_refresh_token', data.refresh_token);
+    return true;
+  }
+  return false;
+}
+
+async function refreshAccessToken() {
+  const rt = localStorage.getItem('gsc_refresh_token');
+  const cId = localStorage.getItem('gsc_client_id');
+  const cSecret = localStorage.getItem('gsc_client_secret');
+  if (!rt || !cId || !cSecret) return false;
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ refresh_token: rt, client_id: cId, client_secret: cSecret, grant_type: 'refresh_token' })
+  });
+  const data = await resp.json();
+  if (data.access_token) {
+    accessToken = data.access_token;
+    localStorage.setItem('gsc_access_token', accessToken);
+    return true;
+  }
+  return false;
+}
+
+async function gscQuery(startDate, endDate, dimensions, rowLimit = 500) {
+  const body = { startDate, endDate, dimensions, rowLimit };
+  let resp = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}/searchAnalytics/query`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (resp.status === 401) {
+    const ok = await refreshAccessToken();
+    if (!ok) { logout(); return null; }
+    resp = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(SITE)}/searchAnalytics/query`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  }
+  if (!resp.ok) return null;
+  return await resp.json();
+}
+
+function dateStr(daysAgo) {
+  const d = new Date(); d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().split('T')[0];
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return Math.round(n).toString();
+}
+
+function deltaHtml(val, prev, invert = false) {
+  if (!prev) return '<span class="delta-neutral">—</span>';
+  const pct = ((val - prev) / prev * 100).toFixed(1);
+  const up = invert ? pct < 0 : pct > 0;
+  const cls = Math.abs(pct) < 1 ? 'delta-neutral' : up ? 'delta-up' : 'delta-down';
+  const arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '→';
+  return `<span class="${cls}">${arrow} ${Math.abs(pct)}% vs vorige periode</span>`;
+}
+
+async function loadAllData() {
+  showLoading('Data ophalen...');
+  try {
+    const now = dateStr(3);
+    const p28start = dateStr(31);
+    const p28end = dateStr(4);
+    const prev28start = dateStr(59);
+    const prev28end = dateStr(32);
+
+    // Stats: current 28d
+    const [cur, prev] = await Promise.all([
+      gscQuery(p28start, p28end, ['date'], 1),
+      gscQuery(prev28start, prev28end, ['date'], 1)
+    ]);
+
+    // Full data for analysis
+    const [kwCur, kwPrev, pageCur, pagePrev] = await Promise.all([
+      gscQuery(p28start, p28end, ['query'], 500),
+      gscQuery(prev28start, prev28end, ['query'], 500),
+      gscQuery(p28start, p28end, ['page'], 200),
+      gscQuery(prev28start, prev28end, ['page'], 200)
+    ]);
+
+    // Aggregate stats
+    const sumRows = (data) => {
+      if (!data || !data.rows) return { clicks: 0, impressions: 0, ctr: 0, position: 0 };
+      const tot = data.rows.reduce((a, r) => ({ clicks: a.clicks + r.clicks, impressions: a.impressions + r.impressions, ctr: a.ctr + r.ctr, position: a.position + r.position, n: a.n + 1 }), { clicks: 0, impressions: 0, ctr: 0, position: 0, n: 0 });
+      return { clicks: tot.clicks, impressions: tot.impressions, ctr: tot.n ? tot.ctr / tot.n : 0, position: tot.n ? tot.position / tot.n : 0 };
+    };
+
+    const cStats = sumRows(kwCur);
+    const pStats = sumRows(kwPrev);
+
+    document.getElementById('s-clicks').textContent = fmtNum(cStats.clicks);
+    document.getElementById('s-impr').textContent = fmtNum(cStats.impressions);
+    document.getElementById('s-ctr').textContent = (cStats.ctr * 100).toFixed(1) + '%';
+    document.getElementById('s-pos').textContent = cStats.position.toFixed(1);
+    document.getElementById('d-clicks').innerHTML = deltaHtml(cStats.clicks, pStats.clicks);
+    document.getElementById('d-impr').innerHTML = deltaHtml(cStats.impressions, pStats.impressions);
+    document.getElementById('d-ctr').innerHTML = deltaHtml(cStats.ctr, pStats.ctr);
+    document.getElementById('d-pos').innerHTML = deltaHtml(cStats.position, pStats.position, true);
+
+    // Quick wins: pos 4-15
+    renderQuickWins(kwCur);
+
+    // Declining pages
+    renderDecliningPages(pageCur, pagePrev);
+
+    // Top pages
+    renderTopPages(pageCur, pagePrev);
+
+    // Declining keywords
+    renderDecliningKeywords(kwCur, kwPrev);
+
+    document.getElementById('last-updated').textContent = 'Bijgewerkt: ' + new Date().toLocaleTimeString('nl-BE');
+    showDashboard();
+  } catch (e) {
+    showDashError('Fout bij het laden van data: ' + e.message);
+    showDashboard();
+  }
+}
+
+function renderQuickWins(data) {
+  const tbody = document.getElementById('quickwins-body');
+  if (!data || !data.rows) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Geen data beschikbaar</td></tr>'; return; }
+  const wins = data.rows
+    .filter(r => r.position >= 4 && r.position <= 15 && r.impressions > 10)
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 20);
+  if (!wins.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Geen quick wins gevonden</td></tr>'; return; }
+  tbody.innerHTML = wins.map(r => {
+    const kw = r.keys[0];
+    const pot = r.position <= 6 ? 'Hoog' : r.position <= 10 ? 'Middel' : 'Laag';
+    const potCls = r.position <= 6 ? 'badge-green' : r.position <= 10 ? 'badge-amber' : 'badge-blue';
+    const barW = Math.max(4, Math.min(100, (20 - r.position) / 16 * 100));
+    return `<tr>
+      <td>${kw}</td>
+      <td><div class="pos-bar"><span class="pos-num">${r.position.toFixed(1)}</span><div class="pos-track"><div class="pos-fill" style="width:${barW}%"></div></div></div></td>
+      <td>${fmtNum(r.clicks)}</td>
+      <td>${fmtNum(r.impressions)}</td>
+      <td>${(r.ctr * 100).toFixed(1)}%</td>
+      <td><span class="badge ${potCls}">${pot}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDecliningPages(cur, prev) {
+  const tbody = document.getElementById('declining-body');
+  if (!cur || !cur.rows || !prev || !prev.rows) { tbody.innerHTML = '<tr><td colspan="3" class="empty">Geen data</td></tr>'; return; }
+  const prevMap = {};
+  prev.rows.forEach(r => prevMap[r.keys[0]] = r.position);
+  const declining = cur.rows
+    .filter(r => prevMap[r.keys[0]] && r.position > prevMap[r.keys[0]] + 1)
+    .map(r => ({ page: r.keys[0], now: r.position, diff: r.position - prevMap[r.keys[0]] }))
+    .sort((a, b) => b.diff - a.diff)
+    .slice(0, 10);
+  if (!declining.length) { tbody.innerHTML = '<tr><td colspan="3" class="empty">Geen significante dalingen</td></tr>'; return; }
+  tbody.innerHTML = declining.map(r => {
+    const slug = r.page.replace('https://mijnkadootje.be', '') || '/';
+    return `<tr>
+      <td><span class="url-cell" title="${r.page}">${slug}</span></td>
+      <td><span class="pos-num">${r.now.toFixed(1)}</span></td>
+      <td><span class="badge badge-red">↓ ${r.diff.toFixed(1)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTopPages(cur, prev) {
+  const tbody = document.getElementById('toppages-body');
+  if (!cur || !cur.rows) { tbody.innerHTML = '<tr><td colspan="3" class="empty">Geen data</td></tr>'; return; }
+  const prevMap = {};
+  if (prev && prev.rows) prev.rows.forEach(r => prevMap[r.keys[0]] = r.clicks);
+  const top = cur.rows.sort((a, b) => b.clicks - a.clicks).slice(0, 10);
+  tbody.innerHTML = top.map(r => {
+    const slug = r.keys[0].replace('https://mijnkadootje.be', '') || '/';
+    const prevClicks = prevMap[r.keys[0]] || 0;
+    const diff = r.clicks - prevClicks;
+    const trendCls = diff > 0 ? 'badge-green' : diff < 0 ? 'badge-red' : 'badge-blue';
+    const trendTxt = diff > 0 ? '↑ ' + fmtNum(diff) : diff < 0 ? '↓ ' + fmtNum(Math.abs(diff)) : '→ stabiel';
+    return `<tr>
+      <td><span class="url-cell" title="${r.keys[0]}">${slug}</span></td>
+      <td>${fmtNum(r.clicks)}</td>
+      <td><span class="badge ${trendCls}">${trendTxt}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDecliningKeywords(cur, prev) {
+  const tbody = document.getElementById('declining-kw-body');
+  if (!cur || !cur.rows || !prev || !prev.rows) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Geen data</td></tr>'; return; }
+  const prevMap = {};
+  prev.rows.forEach(r => prevMap[r.keys[0]] = r);
+  const declining = cur.rows
+    .filter(r => prevMap[r.keys[0]] && r.clicks < prevMap[r.keys[0]].clicks - 2)
+    .map(r => ({ kw: r.keys[0], clicks: r.clicks, prev: prevMap[r.keys[0]].clicks, pos: r.position }))
+    .sort((a, b) => (b.prev - b.clicks) - (a.prev - a.clicks))
+    .slice(0, 15);
+  if (!declining.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Geen dalende zoekwoorden gevonden</td></tr>'; return; }
+  tbody.innerHTML = declining.map(r => {
+    const diff = r.clicks - r.prev;
+    return `<tr>
+      <td>${r.kw}</td>
+      <td>${fmtNum(r.clicks)}</td>
+      <td>${fmtNum(r.prev)}</td>
+      <td><span class="badge badge-red">↓ ${fmtNum(Math.abs(diff))}</span></td>
+      <td>${r.pos.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function showLoading(txt) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('loading-text').textContent = txt || 'Laden...';
+}
+
+function showDashboard() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function showDashError(msg) {
+  const el = document.getElementById('dash-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function logout() {
+  localStorage.removeItem('gsc_access_token');
+  localStorage.removeItem('gsc_refresh_token');
+  accessToken = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+// Init
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+
+  if (code && state && state === localStorage.getItem('oauth_state')) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    showLoading('Verbinding maken met Google...');
+    const ok = await exchangeCode(code);
+    if (ok) { await loadAllData(); }
+    else { document.getElementById('login-screen').style.display = 'flex'; document.getElementById('loading').style.display = 'none'; showLoginError('Authenticatie mislukt. Probeer opnieuw.'); }
+    return;
+  }
+
+  const stored = localStorage.getItem('gsc_access_token');
+  if (stored) {
+    accessToken = stored;
+    clientId = localStorage.getItem('gsc_client_id') || '';
+    clientSecret = localStorage.getItem('gsc_client_secret') || '';
+    await loadAllData();
+    return;
+  }
+
+  // Pre-fill client id if stored
+  const storedId = localStorage.getItem('gsc_client_id');
+  if (storedId) document.getElementById('client-id').value = storedId;
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+init();
+</script>
+</body>
+</html>
