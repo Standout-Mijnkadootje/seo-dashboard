@@ -257,6 +257,26 @@ tr:hover td{background:var(--bg3);}
         <tbody id="bad-metas-body"></tbody></table>
       </div>
 
+      <div class="section-title">Search Console — pagina's zonder klikken (live data)</div>
+      <div class="table-card" style="margin-bottom:28px">
+        <div class="table-header">
+          <div><div class="table-title">Geïndexeerde pagina's met 0 klikken in 28 dagen</div><div class="table-sub">Veel vertoningen maar geen klikken = CTR probleem (title/meta). Geen vertoningen = indexeringsprobleem.</div></div>
+          <button class="btn-sm" onclick="loadZeroClickPages()">↻ Laden</button>
+        </div>
+        <table><thead><tr><th>Pagina</th><th>Vertoningen</th><th>Klikken</th><th>Diagnose</th></tr></thead>
+        <tbody id="zero-clicks-body"><tr><td colspan="4" class="empty">Klik op "Laden" om Search Console data op te halen</td></tr></tbody></table>
+      </div>
+
+      <div class="section-title">Search Console — zwak presterende pagina's</div>
+      <div class="table-card" style="margin-bottom:28px">
+        <div class="table-header">
+          <div><div class="table-title">Pagina's met &lt;5 klikken maar wel vertoningen</div><div class="table-sub">Pagina's die Google wel vindt maar gebruikers niet aanklikken — title/meta optimalisatie nodig</div></div>
+          <button class="btn-sm" onclick="loadWeakPages()">↻ Laden</button>
+        </div>
+        <table><thead><tr><th>Pagina</th><th>Klikken</th><th>Vertoningen</th><th>CTR</th><th>Prioriteit</th></tr></thead>
+        <tbody id="weak-pages-body"><tr><td colspan="5" class="empty">Klik op "Laden" om Search Console data op te halen</td></tr></tbody></table>
+      </div>
+
       <div class="ai-panel">
         <div class="ai-panel-header">
           <div class="ai-panel-title"><div class="ai-dot"></div>AI prioriteitenanalyse</div>
@@ -491,6 +511,39 @@ Geef:
     body.innerHTML=`<div class="ai-content">${text}</div>`;
   }catch(e){body.innerHTML=`<div style="color:var(--danger);font-size:13px">Fout: ${e.message}</div>`;}
   btn.disabled=false;btn.innerHTML='✦ Hergeneer';
+}
+
+async function loadZeroClickPages(){
+  const tb=document.getElementById('zero-clicks-body');
+  tb.innerHTML='<tr><td colspan="4" class="empty">Laden...</td></tr>';
+  const s=dateStr(31),e=dateStr(4);
+  const data=await gscQuery(s,e,['page'],500);
+  if(!data||!data.rows){tb.innerHTML='<tr><td colspan="4" class="empty">Geen data — log eerst in via Search Console</td></tr>';return;}
+  const zero=data.rows.filter(r=>r.clicks===0).sort((a,b)=>b.impressions-a.impressions).slice(0,30);
+  if(!zero.length){tb.innerHTML='<tr><td colspan="4" class="empty">Geen pagina\'s met 0 klikken gevonden ✓</td></tr>';return;}
+  tb.innerHTML=zero.map(r=>{
+    const slug=r.keys[0].replace('https://mijnkadootje.be','')||'/';
+    const diag=r.impressions>100?'badge-red':r.impressions>10?'badge-amber':'badge-blue';
+    const diagTxt=r.impressions>100?'Title/meta optimaliseren':r.impressions>10?'Content verbeteren':'Weinig zoekvolume';
+    return`<tr><td><a href="${r.keys[0]}" target="_blank" class="url-cell">${slug}</a></td><td>${fmtNum(r.impressions)}</td><td>0</td><td><span class="badge ${diag}">${diagTxt}</span></td></tr>`;
+  }).join('');
+}
+
+async function loadWeakPages(){
+  const tb=document.getElementById('weak-pages-body');
+  tb.innerHTML='<tr><td colspan="5" class="empty">Laden...</td></tr>';
+  const s=dateStr(31),e=dateStr(4);
+  const data=await gscQuery(s,e,['page'],500);
+  if(!data||!data.rows){tb.innerHTML='<tr><td colspan="5" class="empty">Geen data — log eerst in via Search Console</td></tr>';return;}
+  const weak=data.rows.filter(r=>r.clicks>0&&r.clicks<5&&r.impressions>20).sort((a,b)=>b.impressions-a.impressions).slice(0,30);
+  if(!weak.length){tb.innerHTML='<tr><td colspan="5" class="empty">Geen zwak presterende pagina\'s gevonden ✓</td></tr>';return;}
+  tb.innerHTML=weak.map(r=>{
+    const slug=r.keys[0].replace('https://mijnkadootje.be','')||'/';
+    const ctr=(r.ctr*100).toFixed(1);
+    const pri=r.impressions>200?'badge-red':r.impressions>50?'badge-amber':'badge-blue';
+    const priTxt=r.impressions>200?'Hoog':r.impressions>50?'Middel':'Laag';
+    return`<tr><td><a href="${r.keys[0]}" target="_blank" class="url-cell">${slug}</a></td><td>${fmtNum(r.clicks)}</td><td>${fmtNum(r.impressions)}</td><td style="font-family:var(--mono);font-size:12px">${ctr}%</td><td><span class="badge ${pri}">${priTxt}</span></td></tr>`;
+  }).join('');
 }
 
 async function generateAuditAdvice(){
