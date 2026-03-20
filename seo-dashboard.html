@@ -433,7 +433,7 @@ async function generateAIAdvice() {
   if(!summary){body.innerHTML='<div style="color:var(--muted);font-size:13px">Laad eerst de data via het Overzicht tabblad.</div>';btn.disabled=false;btn.textContent='✦ Analyseer nu';return;}
 
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('https://seo-proxy.green-thunder-8776.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -462,7 +462,7 @@ async function generateBlogAdvice() {
   if(!summary){body.innerHTML='<div style="color:var(--muted);font-size:13px">Laad eerst de data.</div>';btn.disabled=false;btn.innerHTML='✦ Genereer ideeën';return;}
 
   try {
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    const resp=await fetch('https://seo-proxy.green-thunder-8776.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
