@@ -480,7 +480,7 @@ async function generateAIAdvice(){
   const summary=buildDataSummary();
   if(!summary){body.innerHTML='<div style="color:var(--muted);font-size:13px">Laad eerst de data.</div>';btn.disabled=false;btn.innerHTML='✦ Analyseer nu';return;}
   try{
-    const text=await callAI('Je bent een senior SEO-consultant gespecialiseerd in Belgische e-commerce. Analyseer Search Console data van mijnkadootje.be en geef concrete aanbevelingen in het Nederlands. Noem exacte zoekwoorden, pagina's en aanpassingen. Gebruik HTML met <h3>, <ul>, <li>, <strong> tags.',`Analyseer deze Search Console data en geef:
+    const text=await callAI(`Je bent een senior SEO-consultant gespecialiseerd in Belgische e-commerce. Analyseer Search Console data van mijnkadootje.be en geef concrete aanbevelingen in het Nederlands. Noem exacte zoekwoorden, pagina’s en aanpassingen. Gebruik HTML met <h3>, <ul>, <li>, <strong> tags.`,`Analyseer deze Search Console data en geef:
 1. Top 5 prioritaire zoekwoorden deze week (met uitleg)
 2. Concrete title tag / H1 / meta description aanpassingen
 3. Interne linking aanbevelingen
